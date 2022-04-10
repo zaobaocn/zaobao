@@ -1,0 +1,46 @@
+name: News Push
+
+on: [workflow_dispatch, repository_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps: 
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      
+      - name: Setup dependence
+        run: |
+          pip install -r requirements.txt
+          # wget https://raw.githubusercontent.com/Kikobeats/top-user-agents/master/index.json -O ua.json
+
+      - name: Run python
+        env:
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          BOT_ID: ${{ secrets.BOT_ID }}
+        run: |
+            python3 zaobao.py
+
+      - name: Clean log
+        uses: igorjs/gh-actions-clean-workflow@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          days_old: 0
+
+      - name: Update repo
+        run: |
+          git config --local user.email "you@example.com"
+          git config --local user.name "Your Name"
+          git checkout --orphan latest_branch
+          git add -A
+          git commit -am "cmommit"
+          git branch -D main
+          git branch -m main
+          git push -f origin main
+          #git add .
+          #git commit -m 'update' || exit 0
+          #git push origin main

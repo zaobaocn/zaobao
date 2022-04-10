@@ -35,12 +35,6 @@ jobs:
         run: |
           git config --local user.email "you@example.com"
           git config --local user.name "Your Name"
-          git checkout --orphan latest_branch
-          git add -A
-          git commit -am "cmommit"
-          git branch -D main
-          git branch -m main
-          git push -f origin main
-          #git add .
-          #git commit -m 'update' || exit 0
-          #git push origin main
+          git add .
+          git commit -m 'update' || exit 0
+          git push origin main

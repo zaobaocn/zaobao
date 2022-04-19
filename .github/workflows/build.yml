@@ -29,7 +29,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
-          days_old: '1'
 
       - name: Update repo
         run: |

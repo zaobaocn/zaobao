@@ -23,17 +23,18 @@ jobs:
         run: |
             python3 zaobao.py
 
-      - name: Clean log
-        uses: igorjs/gh-actions-clean-workflow@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-
       - name: Update repo
         run: |
           git config --local user.email "you@example.com"
           git config --local user.name "Your Name"
           git add .
           git commit -m 'update' || exit 0
-          git push origin main
+          git push -f origin main
+
+      - name: Clean log
+        uses: igorjs/gh-actions-clean-workflow@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          days_old: 0

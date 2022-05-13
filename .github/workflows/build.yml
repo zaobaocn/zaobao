@@ -24,12 +24,15 @@ jobs:
             python3 zaobao.py
 
       - name: Update repo
+        env:
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
         run: |
-          git config --local user.email "you@example.com"
-          git config --local user.name "Your Name"
+          git config --local user.email "${ACTOR}@users.noreply.github.com"
+          git config --local user.name "${ACTOR}"
           git add .
           git commit -m 'update' || exit 0
-          git push -f origin main
+          git push origin main
 
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
@@ -37,4 +40,4 @@ jobs:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           retain_days: 0
-          keep_minimum_runs: 100
+          keep_minimum_runs: 23

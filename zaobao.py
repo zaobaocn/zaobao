@@ -56,11 +56,6 @@ class zaobao:
                 img = self.url + img
         else:
             img = ''
-        # 日期
-        try:
-            pub_date = soup.find('h4', {'class': 'date-published'}).text.strip()
-        except Exception as e:
-            pub_date = ''
         # 内容
         article_content = soup.find('div', {'class': "article-content-rawhtml"})
         ps = article_content.find_all('p')
@@ -74,7 +69,7 @@ class zaobao:
             kw_list = keywords.ul.find_all('li')  
             for i in kw_list:
                 kw += f'#{i.text.strip()} '
-        msg = article_title + article + '\n\n' + pub_date + '\n' + kw
+        msg = article_title + article + '\n\n' + kw
         print(time.strftime('%Y-%m-%d %H:%M:%S'), title, '已获取')
         return title,msg,img,kw
     

@@ -57,7 +57,10 @@ class zaobao:
         else:
             img = ''
         # 日期
-        pub_date = soup.find('h4', {'class': 'date-published'}).text.strip()
+        try:
+            pub_date = soup.find('h4', {'class': 'date-published'}).text.strip()
+        except Exception as e:
+            pub_date = ''
         # 内容
         article_content = soup.find('div', {'class': "article-content-rawhtml"})
         ps = article_content.find_all('p')

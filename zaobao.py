@@ -12,17 +12,13 @@ class zaobao:
         self.bot_id = bot_id
         self.chat_id = chat_id
         self.news_list = []
-        self.all_news = set()
         self.url = 'https://www.zaobao.com.sg'
         with open('ua.json', 'r') as f:
             ua_list = eval(f.read())
             ua = ua_list[randrange(0,len(ua_list))]
             self.header = {'User-Agent': ua}
-        with open('list.txt', 'r') as f:
-            self.old_news = eval(f.read())
         with open('send.txt', 'r') as f:
             self.sended_list = eval(f.read())
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), f'上次旧闻共{len(self.old_news)}篇')
 
     # 获取新闻列表
     def getNewsList(self):
@@ -35,9 +31,7 @@ class zaobao:
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'共发现新闻{len(china_list + world_list)}篇')
         for i in (china_list + world_list):
             url = self.url + i.a['href']
-            self.all_news.add(i.a['href'])
-            # 加sended_list判断是因为有时前一次获取的内容比当前这次获取的新闻条目要“新”
-            if i.a['href'] not in self.old_news and url not in self.sended_list:
+            if url not in self.sended_list:
                 self.news_list.append(url)
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'待获取新闻{len(self.news_list)}篇')
 
@@ -96,11 +90,9 @@ class zaobao:
     
     # 更新新闻列表
     def updateList(self):
-        with open('list.txt', 'w') as f:
-            f.write(str(self.all_news))
         with open('send.txt', 'w') as f:
             send = self.sended_list
-            send = send[-80:len(send)]
+            send = send[-120:len(send)]
             f.write(str(send))
         print(time.strftime('%Y-%m-%d %H:%M:%S'), '列表已更新')
 

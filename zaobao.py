@@ -24,13 +24,12 @@ class zaobao:
     def getNewsList(self):
         r = requests.get(self.url + '/realtime', headers=self.header)
         soup = BeautifulSoup(r.text, 'html.parser')
-        china = soup.find('div', {'class': 'layout__region--second'})
-        world = soup.find_all('div', {'class': 'layout__region--first'})[1]
-        china_list = china.find_all('span', {'class': 'realtime-title'})
-        world_list = world.find_all('span', {'class': 'realtime-title'})
+        cat = soup.find('div', {'class': 'realtime-articles-by-web-category'})
+        china_list = cat.contents[1].ul.contents
+        world_list = cat.contents[2].ul.contents
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'共发现新闻{len(china_list + world_list)}篇')
         for i in (china_list + world_list):
-            url = self.url + i.a['href']
+            url = self.url + i.find('a')['href']
             if url not in self.sended_list:
                 self.news_list.append(url)
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'待获取新闻{len(self.news_list)}篇')

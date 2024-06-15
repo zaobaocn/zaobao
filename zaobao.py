@@ -77,8 +77,7 @@ class zaobao:
             self.sended_list.append(url)
             print(time.strftime('%Y-%m-%d %H:%M:%S'), title, '已发送')
             # no more than 20 messages per minute to the same group
-            if len(self.news_list) != 1:
-                time.sleep(3)
+            time.sleep(5)
         except Exception as e:
             print("上传TG过程：", e)
             ins_url = f'https://t.me/iv?url={url}&rhash=fb7348ef6b5de0'

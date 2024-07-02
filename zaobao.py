@@ -30,9 +30,11 @@ class zaobao:
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'共发现新闻{len(china_list + world_list)}篇')
         for i in (china_list + world_list):
             url = self.url + i.find('a')['href']
-            if url not in self.sended_list:
+            title = i.find('h2').text.strip()
+            if title not in self.sended_list:
                 self.news_list.append(url)
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), f'待获取新闻{len(self.news_list)}篇')
+                print(time.strftime('%Y-%m-%d %H:%M:%S'), title, '待获取')
+        print(time.strftime('%Y-%m-%d %H:%M:%S'), f'待获取新闻共{len(self.news_list)}篇')
 
     # 获取新闻全文
     def getArticle(self, url):
@@ -74,7 +76,6 @@ class zaobao:
                 bot.send_photo(self.chat_id, img, msg, parse_mode='HTML')
             else:
                 bot.sendMessage(self.chat_id, msg, parse_mode='HTML', disable_web_page_preview=True)
-            self.sended_list.append(url)
             print(time.strftime('%Y-%m-%d %H:%M:%S'), title, '已发送')
             # no more than 20 messages per minute to the same group
             time.sleep(5)
@@ -83,14 +84,14 @@ class zaobao:
             ins_url = f'https://t.me/iv?url={url}&rhash=fb7348ef6b5de0'
             msg = f"<a href='{ins_url}'>Full Text</a> " + kw
             bot.sendMessage(self.chat_id, msg, parse_mode='HTML')
-            self.sended_list.append(url)
             print(time.strftime('%Y-%m-%d %H:%M:%S'), title, "转为即时预览发送")
+        self.sended_list.append(title)
     
     # 更新新闻列表
     def updateList(self):
         with open('send.txt', 'w') as f:
             send = self.sended_list
-            send = send[-120:len(send)]
+            send = send[-160:len(send)]
             f.write(str(send))
         print(time.strftime('%Y-%m-%d %H:%M:%S'), '列表已更新')
 

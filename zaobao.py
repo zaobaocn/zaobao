@@ -33,6 +33,7 @@ class zaobao:
             # 列表标题和新闻详情页标题有可能不一致
             # 使用链接判重也会出现重复发送现象（暂未找出原因）
             # 故使用链接和标题的md5值双重判重
+            # 使用zlib的crc32值会更快
             url = self.url + i.find('a')['href']
             title = i.find('h2').text.strip()
             url_md5 = hashlib.md5(url.encode('utf-8')).hexdigest()

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import os
 import time
+import hashlib
 import requests
 import telegram
 from random import randrange
@@ -33,7 +34,7 @@ class zaobao:
             title = i.find('h2').text.strip()
             if title not in self.sended_list:
                 self.news_list.append(url)
-                print(time.strftime('%Y-%m-%d %H:%M:%S'), title, '待获取')
+                print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), '待获取')
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'待获取新闻共{len(self.news_list)}篇')
 
     # 获取新闻全文
@@ -65,7 +66,7 @@ class zaobao:
             for i in kw_list:
                 kw += f'#{i.text.strip()} '
         msg = article_title + article + '\n\n' + kw
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, '已获取')
+        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), '已获取')
         return title,msg,img,kw
     
     # 推送新闻至TG
@@ -76,7 +77,7 @@ class zaobao:
                 bot.send_photo(self.chat_id, img, msg, parse_mode='HTML')
             else:
                 bot.sendMessage(self.chat_id, msg, parse_mode='HTML', disable_web_page_preview=True)
-            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, '已发送')
+            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), '已发送')
             # no more than 20 messages per minute to the same group
             time.sleep(5)
         except Exception as e:
@@ -84,7 +85,7 @@ class zaobao:
             ins_url = f'https://t.me/iv?url={url}&rhash=fb7348ef6b5de0'
             msg = f"<a href='{ins_url}'>Full Text</a> " + kw
             bot.sendMessage(self.chat_id, msg, parse_mode='HTML')
-            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, "转为即时预览发送")
+            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), "转为即时预览发送")
         self.sended_list.append(title)
     
     # 更新新闻列表

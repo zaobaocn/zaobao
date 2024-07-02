@@ -30,9 +30,14 @@ class zaobao:
         world_list = cat.contents[2].ul.contents
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'共发现新闻{len(china_list + world_list)}篇')
         for i in (china_list + world_list):
+            # 列表标题和新闻详情页标题有可能不一致
+            # 使用链接判重也会出现重复发送现象（暂未找出原因）
+            # 故使用链接和标题的md5值双重判重
             url = self.url + i.find('a')['href']
             title = i.find('h2').text.strip()
-            if title not in self.sended_list:
+            url_md5 = hashlib.md5(url.encode('utf-8')).hexdigest()
+            title_md5 = hashlib.md5(title.encode('utf-8')).hexdigest()
+            if url_md5 not in self.sended_list and title_md5 not in self.sended_list:
                 self.news_list.append(url)
                 print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), '待获取')
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'待获取新闻共{len(self.news_list)}篇')
@@ -86,7 +91,7 @@ class zaobao:
             msg = f"<a href='{ins_url}'>Full Text</a> " + kw
             bot.sendMessage(self.chat_id, msg, parse_mode='HTML')
             print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), "转为即时预览发送")
-        self.sended_list.append(title)
+        self.sended_list.extend(hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest())
     
     # 更新新闻列表
     def updateList(self):

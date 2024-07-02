@@ -91,7 +91,7 @@ class zaobao:
             msg = f"<a href='{ins_url}'>Full Text</a> " + kw
             bot.sendMessage(self.chat_id, msg, parse_mode='HTML')
             print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), "转为即时预览发送")
-        self.sended_list.extend(hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest())
+        self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
     
     # 更新新闻列表
     def updateList(self):

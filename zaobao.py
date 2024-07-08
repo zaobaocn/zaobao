@@ -34,22 +34,22 @@ class zaobao:
             # 使用链接判重也会出现重复发送现象（暂未找出原因）
             # 故使用链接和标题的md5值双重判重
             # 使用zlib的crc32值会更快
-            url = self.url + i.find('a')['href']
+            url = i.find('a')['href']
             title = i.find('h2').text.strip()
             url_md5 = hashlib.md5(url.encode('utf-8')).hexdigest()
             title_md5 = hashlib.md5(title.encode('utf-8')).hexdigest()
             if url_md5 not in self.sended_list and title_md5 not in self.sended_list:
                 self.news_list.append(url)
-                print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), '待获取')
+                print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '待获取')
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'待获取新闻共{len(self.news_list)}篇')
 
     # 获取新闻全文
     def getArticle(self, url):
-        r = requests.get(url, headers=self.header)
+        r = requests.get(self.url + url, headers=self.header)
         soup = BeautifulSoup(r.text, 'html.parser')
         # 标题
         title = soup.find('div', {'class': "article-title"}).text.strip()
-        article_title = f"<a href='{url}'>" + '<b>' + title + '</b>' + '</a>'
+        article_title = f"<a href='{self.url + url}'>" + '<b>' + title + '</b>' + '</a>'
         # 封面
         figure = soup.find('figure', {'class': 'inline-figure'})
         if figure:
@@ -72,7 +72,7 @@ class zaobao:
             for i in kw_list:
                 kw += f'#{i.text.strip()} '
         msg = article_title + article + '\n\n' + kw
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), '已获取')
+        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已获取')
         return title,msg,img,kw
     
     # 推送新闻至TG
@@ -88,10 +88,10 @@ class zaobao:
             time.sleep(5)
         except Exception as e:
             print("上传TG过程：", e)
-            ins_url = f'https://t.me/iv?url={url}&rhash=fb7348ef6b5de0'
+            ins_url = f'https://t.me/iv?url={self.url + url}&rhash=fb7348ef6b5de0'
             msg = f"<a href='{ins_url}'>Full Text</a> " + kw
             bot.sendMessage(self.chat_id, msg, parse_mode='HTML')
-            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), "转为即时预览发送")
+            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, "转为即时预览发送")
         self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
     
     # 更新新闻列表

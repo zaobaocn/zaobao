@@ -98,7 +98,7 @@ class zaobao:
     def updateList(self):
         with open('send.txt', 'w') as f:
             send = self.sended_list
-            send = send[-160:len(send)]
+            send = send[-320:len(send)]
             f.write(str(send))
         print(time.strftime('%Y-%m-%d %H:%M:%S'), '列表已更新')
 

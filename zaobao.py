@@ -83,7 +83,7 @@ class zaobao:
                 bot.send_photo(self.chat_id, img, msg, parse_mode='HTML')
             else:
                 bot.sendMessage(self.chat_id, msg, parse_mode='HTML', disable_web_page_preview=True)
-            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, hashlib.md5(title.encode('utf-8')).hexdigest(), '已发送')
+            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送')
             # no more than 20 messages per minute to the same group
             time.sleep(5)
         except Exception as e:

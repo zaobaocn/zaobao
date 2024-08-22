@@ -25,9 +25,9 @@ class zaobao:
     def getNewsList(self):
         r = requests.get(self.url + '/realtime', headers=self.header)
         soup = BeautifulSoup(r.text, 'html.parser')
-        cat = soup.find('div', {'class': 'realtime-articles-by-web-category'})
-        china_list = cat.contents[1].ul.contents
-        world_list = cat.contents[2].ul.contents
+        cat = soup.find('div', {'id': 'realtime-articles-by-web-category'})
+        china_list = cat.div.contents[1].div.ul.contents
+        world_list = cat.div.contents[2].div.ul.contents
         print(time.strftime('%Y-%m-%d %H:%M:%S'), f'共发现新闻{len(china_list + world_list)}篇')
         for i in (china_list + world_list):
             # 列表标题和新闻详情页标题有可能不一致

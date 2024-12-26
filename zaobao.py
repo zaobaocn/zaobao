@@ -115,6 +115,6 @@ if __name__ == '__main__':
     zb.getNewsList()
     for url in zb.news_list:
         title,msg,img,kw = zb.getArticle(url)
-        zb.sendMessage(msg)
+        zb.sendMessage(msg, title, url)
         time.sleep(5)
     zb.updateList()

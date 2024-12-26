@@ -77,7 +77,7 @@ class zaobao:
     
     # 推送新闻至TG
     def sendMessage(self, text, title, url):
-        data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML'}
+        data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'link_preview_options': 'is_disabled'}
         requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendMessage", data=data)
         self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
 

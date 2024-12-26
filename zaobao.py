@@ -76,11 +76,10 @@ class zaobao:
         return title,msg,img,kw
     
     # 推送新闻至TG
-    def sendMessage(self, text):
-        url = f"https://api.telegram.org/bot{self.bot_id}/sendMessage"
+    def sendMessage(self, text, title, url):
         data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML'}
-        r = requests.post(url, data=data)
-        return r
+        requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendMessage", data=data)
+        self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
 
     def sendMsg(self, title, msg, img, kw, url):
         bot = telegram.Bot(self.bot_id)
@@ -117,4 +116,5 @@ if __name__ == '__main__':
     for url in zb.news_list:
         title,msg,img,kw = zb.getArticle(url)
         zb.sendMessage(msg)
+        time.sleep(5)
     zb.updateList()

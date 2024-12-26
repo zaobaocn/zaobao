@@ -48,27 +48,27 @@ class zaobao:
         r = requests.get(self.url + url, headers=self.header)
         soup = BeautifulSoup(r.text, 'html.parser')
         # 标题
-        title = soup.find('div', {'class': "article-title"}).text.strip()
+        title = soup.find('h1').text.strip()
         article_title = f"<a href='{self.url + url}'>" + '<b>' + title + '</b>' + '</a>'
         # 封面
-        figure = soup.find('figure', {'class': 'inline-figure'})
+        figure = soup.find('img', {'class': 'mx-auto my-0 w-full rounded-[4px] object-contain'})
         if figure:
-            img = figure.find('img')['data-src']
+            img = figure['src']
             if 'http' not in img:
                 img = self.url + img
         else:
             img = ''
         # 内容
-        article_content = soup.find('div', {'class': "article-content-rawhtml"})
+        article_content = soup.find('div', {'class': "articleBody"})
         ps = article_content.find_all('p')
         article = ''
         for p in ps:
             article += '\n\n' + p.text
         # 关键词
         kw = ''
-        keywords = soup.find('div', {'class': 'keywords'})
+        keywords = soup.find('div', {'class': 'max-h-max'})
         if keywords:
-            kw_list = keywords.ul.find_all('li')  
+            kw_list = keywords.ul.find_all('a')
             for i in kw_list:
                 kw += f'#{i.text.strip()} '
         msg = article_title + article + '\n\n' + kw

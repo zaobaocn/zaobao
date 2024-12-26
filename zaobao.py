@@ -68,7 +68,7 @@ class zaobao:
         kw = ''
         keywords = soup.find('div', {'class': 'max-h-max'})
         if keywords:
-            kw_list = keywords.ul.find_all('a')
+            kw_list = keywords.find_all('a')
             for i in kw_list:
                 kw += f'#{i.text.strip()} '
         msg = article_title + article + '\n\n' + kw

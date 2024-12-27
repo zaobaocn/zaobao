@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import os
+import re
 import time
 import hashlib
 import requests
@@ -51,13 +52,7 @@ class zaobao:
         title = soup.find('h1').text.strip()
         article_title = f"<a href='{self.url + url}'>" + '<b>' + title + '</b>' + '</a>'
         # 封面
-        figure = soup.find('img', {'class': 'mx-auto my-0 w-full rounded-[4px] object-contain'})
-        if figure:
-            img = figure['src']
-            if 'http' not in img:
-                img = self.url + img
-        else:
-            img = ''
+        img = re.search(r'"thumbnailUrl": "(.*?)"', r.text).groups()[0]
         # 内容
         article_content = soup.find('div', {'class': "articleBody"})
         ps = article_content.find_all('p')
@@ -77,8 +72,14 @@ class zaobao:
     
     # 推送新闻至TG
     def sendMessage(self, text, title, url):
-        data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'link_preview_options': 'is_disabled'}
+        data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': 'true'}}
         requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendMessage", data=data)
+        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送')
+        self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
+    
+    def sendPhoto(self, pohoto, caption, title, url):
+        data = {'photo': pohoto, 'caption': caption, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': 'true'}}
+        requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendPhoto", data=data)
         print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送')
         self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
 
@@ -116,6 +117,9 @@ if __name__ == '__main__':
     zb.getNewsList()
     for url in zb.news_list:
         title,msg,img,kw = zb.getArticle(url)
-        zb.sendMessage(msg, title, url)
+        if img:
+            zb.sendPhoto(img, msg, title, url)
+        else:
+            zb.sendMessage(msg, title, url)
         time.sleep(5)
     zb.updateList()

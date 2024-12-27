@@ -4,10 +4,8 @@ import re
 import time
 import hashlib
 import requests
-import telegram
 from random import randrange
 from bs4 import BeautifulSoup
-
 
 class zaobao:
     def __init__(self, bot_id, chat_id):
@@ -77,27 +75,9 @@ class zaobao:
         return r
     
     def sendPhoto(self, pohoto, caption):
-        data = {'photo': pohoto, 'caption': caption, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': True}}
+        data = {'chat_id': self.chat_id, 'photo': pohoto, 'caption': caption, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': True}}
         r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendPhoto", json=data)
         return r
-        
-    def sendMsg(self, title, msg, img, kw, url):
-        bot = telegram.Bot(self.bot_id)
-        try:
-            if img:
-                bot.send_photo(self.chat_id, img, msg, parse_mode='HTML')
-            else:
-                bot.sendMessage(self.chat_id, msg, parse_mode='HTML', disable_web_page_preview=True)
-            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送')
-            # no more than 20 messages per minute to the same group
-            time.sleep(5)
-        except Exception as e:
-            print("上传TG过程：", e)
-            ins_url = f'https://t.me/iv?url={self.url + url}&rhash=fb7348ef6b5de0'
-            msg = f"<a href='{ins_url}'>Full Text</a> " + kw
-            bot.sendMessage(self.chat_id, msg, parse_mode='HTML')
-            print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, "转为即时预览发送")
-        self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
     
     # 更新新闻列表
     def updateList(self):
@@ -106,7 +86,6 @@ class zaobao:
             send = send[-320:len(send)]
             f.write(str(send))
         print(time.strftime('%Y-%m-%d %H:%M:%S'), '列表已更新')
-
 
 if __name__ == '__main__':
     bot_id = os.getenv('BOT_ID')
@@ -118,6 +97,10 @@ if __name__ == '__main__':
         if img:
             r = zb.sendPhoto(img, msg)
         else:
+            r = zb.sendMessage(msg)
+        if r.status_code != 200:
+            ins_url = f'https://t.me/iv?url={zb.url + url}&rhash=fb7348ef6b5de0'
+            msg = f"<a href='{ins_url}'>Full Text</a> " + kw
             r = zb.sendMessage(msg)
         print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送', r.json())
         zb.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])

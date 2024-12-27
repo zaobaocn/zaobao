@@ -101,7 +101,7 @@ if __name__ == '__main__':
         else:
             r = zb.sendMessage(msg)
         if r.status_code != 200:
-            msg = f"<a href='{url}'>{title}</a> " + kw
+            msg = f"<a href='{zb.url + url}'>{title}</a> " + kw
             r = zb.sendMessage(msg, False)
         print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送', r.json())
         zb.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])

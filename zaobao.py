@@ -71,18 +71,16 @@ class zaobao:
         return title,msg,img,kw
     
     # 推送新闻至TG
-    def sendMessage(self, text, title, url):
+    def sendMessage(self, text):
         data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': 'true'}}
-        requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendMessage", data=data)
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送')
-        self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
+        r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendMessage", data=data)
+        return r
     
-    def sendPhoto(self, pohoto, caption, title, url):
+    def sendPhoto(self, pohoto, caption):
         data = {'photo': pohoto, 'caption': caption, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': 'true'}}
-        requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendPhoto", data=data)
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送')
-        self.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
-
+        r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendPhoto", data=data)
+        return r
+        
     def sendMsg(self, title, msg, img, kw, url):
         bot = telegram.Bot(self.bot_id)
         try:
@@ -118,8 +116,10 @@ if __name__ == '__main__':
     for url in zb.news_list:
         title,msg,img,kw = zb.getArticle(url)
         if img:
-            zb.sendPhoto(img, msg, title, url)
+            r = zb.sendPhoto(img, msg)
         else:
-            zb.sendMessage(msg, title, url)
+            r = zb.sendMessage(msg)
+        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送', r)
+        zb.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
         time.sleep(5)
     zb.updateList()

@@ -72,13 +72,13 @@ class zaobao:
     
     # 推送新闻至TG
     def sendMessage(self, text):
-        data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'link_preview_options': "{'is_disabled': 'true'}"}
-        r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendMessage", data=data)
+        data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': 'true'}}
+        r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendMessage", json=data)
         return r
     
     def sendPhoto(self, pohoto, caption):
-        data = {'photo': pohoto, 'caption': caption, 'parse_mode': 'HTML', 'link_preview_options': "{'is_disabled': 'true'}"}
-        r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendPhoto", data=data)
+        data = {'photo': pohoto, 'caption': caption, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': 'true'}}
+        r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendPhoto", json=data)
         return r
         
     def sendMsg(self, title, msg, img, kw, url):

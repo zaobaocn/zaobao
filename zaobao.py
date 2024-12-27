@@ -23,6 +23,7 @@ class zaobao:
     # 获取新闻列表
     def getNewsList(self):
         r = requests.get(self.url + '/realtime', headers=self.header)
+        r.encoding = 'utf-8'
         soup = BeautifulSoup(r.text, 'html.parser')
         cat = soup.find('div', {'id': 'realtime-articles-by-web-category'})
         china_list = cat.div.contents[1].div.ul.contents
@@ -45,6 +46,7 @@ class zaobao:
     # 获取新闻全文
     def getArticle(self, url):
         r = requests.get(self.url + url, headers=self.header)
+        r.encoding = 'utf-8'
         soup = BeautifulSoup(r.text, 'html.parser')
         # 标题
         title = soup.find('h1').text.strip()
@@ -69,8 +71,8 @@ class zaobao:
         return title,msg,img,kw
     
     # 推送新闻至TG
-    def sendMessage(self, text):
-        data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': True}}
+    def sendMessage(self, text, disable_preview=True):
+        data = {'chat_id': self.chat_id, 'text': text, 'parse_mode': 'HTML', 'link_preview_options': {'is_disabled': disable_preview}}
         r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendMessage", json=data)
         return r
     
@@ -99,9 +101,8 @@ if __name__ == '__main__':
         else:
             r = zb.sendMessage(msg)
         if r.status_code != 200:
-            ins_url = f'https://t.me/iv?url={zb.url + url}&rhash=fb7348ef6b5de0'
-            msg = f"<a href='{ins_url}'>Full Text</a> " + kw
-            r = zb.sendMessage(msg)
+            msg = f"<a href='{url}'>{title}</a> " + kw
+            r = zb.sendMessage(msg, False)
         print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送', r.json())
         zb.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
         time.sleep(5)

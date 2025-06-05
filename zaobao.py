@@ -3,7 +3,8 @@ import os
 import re
 import time
 import json
-import hashlib
+import sqlite3
+# import hashlib # Removed hashlib
 import requests
 import logging
 from random import randrange
@@ -15,6 +16,11 @@ class zaobao:
         self.chat_id = chat_id
         self.news_list = []
         self.url = 'https://www.zaobao.com.sg'
+        self.db_file = 'sent_news.db'
+        self.conn = None
+        self.cursor = None
+        self._init_db() # Initialize database connection and table
+
         try:
             with open('ua.json', 'r') as f:
                 ua_list = json.load(f)
@@ -24,16 +30,34 @@ class zaobao:
             logging.error(f"Error loading ua.json: {e}")
             # Provide a default UA or handle the error appropriately
             self.header = {'User-Agent': 'Mozilla/5.0'}
+            
+    def _init_db(self):
+        """Initializes the SQLite database connection and creates the table if it doesn't exist."""
         try:
-            with open('send.json', 'r') as f:
-                self.sended_list = json.load(f)
-                if not isinstance(self.sended_list, list): # Ensure it's a list
-                    logging.warning("send.txt does not contain a valid list. Initializing as empty list.")
-                    self.sended_list = []
-        except (FileNotFoundError, json.JSONDecodeError):
-            logging.warning("send.json not found or invalid JSON. Initializing as empty list.")
-            self.sended_list = [] # Initialize as empty list if file not found or invalid
- 
+            self.conn = sqlite3.connect(self.db_file)
+            self.cursor = self.conn.cursor()
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS sent_items (
+                    url TEXT PRIMARY KEY,
+                    timestamp REAL NOT NULL
+                )
+            ''')
+            self.conn.commit()
+            logging.info(f"Database '{self.db_file}' initialized successfully.")
+        except sqlite3.Error as e:
+            logging.error(f"Database error during initialization: {e}")
+            # Handle error appropriately, maybe exit or fallback
+            if self.conn:
+                self.conn.close()
+            raise # Re-raise the exception if initialization fails critically
+            
+    def close_db(self):
+        """Closes the database connection."""
+        if self.conn:
+            self.conn.commit() # Ensure any pending changes are saved
+            self.conn.close()
+            logging.info("Database connection closed.")
+
     # 获取新闻列表
     def getNewsList(self):
         r = requests.get(self.url + '/realtime', headers=self.header)
@@ -50,9 +74,11 @@ class zaobao:
             # 使用zlib的crc32值会更快
             url = i.find('a')['href']
             title = i.find('h2').text.strip()
-            url_md5 = hashlib.md5(url.encode('utf-8')).hexdigest()
-            title_md5 = hashlib.md5(title.encode('utf-8')).hexdigest()
-            if url_md5 not in self.sended_list and title_md5 not in self.sended_list:
+            # url_md5 = hashlib.md5(url.encode('utf-8')).hexdigest() # Removed MD5
+            # title_md5 = hashlib.md5(title.encode('utf-8')).hexdigest() # Removed MD5
+            # Check if the URL exists in the database
+            self.cursor.execute("SELECT 1 FROM sent_items WHERE url = ?", (url,))
+            if self.cursor.fetchone() is None:
                 self.news_list.append(url)
                 logging.info(f'{title} {url} 待获取')
         logging.info(f'待获取新闻共{len(self.news_list)}篇')
@@ -95,16 +121,28 @@ class zaobao:
         r = requests.post(f"https://api.telegram.org/bot{self.bot_id}/sendPhoto", json=data)
         return r
     
-    # 更新新闻列表
-    def updateList(self):
+    # (updateList method removed as it's replaced by direct DB operations)
+ 
+    def add_sent_item(self, url):
+        """Adds a sent item's URL to the database with the current timestamp."""
         try:
-            with open('send.json', 'w') as f:
-                # Keep only the last 320 entries (consider making this configurable)
-                send_to_write = self.sended_list[-320:]
-                json.dump(send_to_write, f)
-            logging.info('列表已更新')
-        except IOError as e:
-            logging.error(f"Error writing to send.json: {e}")
+            current_time = time.time()
+            self.cursor.execute("INSERT OR IGNORE INTO sent_items (url, timestamp) VALUES (?, ?)", (url, current_time))
+            # No need to commit here, commit happens after loop or on close
+        except sqlite3.Error as e:
+            logging.error(f"Database error adding item {url}: {e}")
+
+    def cleanup_db(self, days_to_keep=7):
+        """Removes entries older than the specified number of days from the database."""
+        try:
+            cutoff_time = time.time() - (days_to_keep * 24 * 60 * 60)
+            self.cursor.execute("DELETE FROM sent_items WHERE timestamp < ?", (cutoff_time,))
+            deleted_count = self.cursor.rowcount
+            self.conn.commit()
+            if deleted_count > 0:
+                logging.info(f"Cleaned up {deleted_count} old entries from the database.")
+        except sqlite3.Error as e:
+            logging.error(f"Database error during cleanup: {e}")
 
 if __name__ == '__main__':
     # 配置日志记录
@@ -125,7 +163,20 @@ if __name__ == '__main__':
         if r.status_code != 200:
             msg = f"<a href='{zb.url + url}'>{title}</a> " + kw
             r = zb.sendMessage(msg, False)
-        logging.info(f'{title} {url} 已发送 {r.json()}')
-        zb.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
-        time.sleep(5)
-    zb.updateList()
+        
+        # Add sent item URL to DB after successful send or fallback send
+        if r.status_code == 200:
+            logging.info(f'{title} {url} 已发送')
+            # url_md5_sent = hashlib.md5(url.encode('utf-8')).hexdigest() # Removed MD5
+            # title_md5_sent = hashlib.md5(title.encode('utf-8')).hexdigest() # Removed MD5
+            zb.add_sent_item(url) # Add the URL directly
+            # zb.add_sent_item(title_md5_sent) # No longer adding title md5
+            zb.conn.commit() # Commit after each successful send
+        else:
+             logging.error(f'Failed to send {title} {url}. Status: {r.status_code}, Response: {r.text}')
+
+        time.sleep(5) # Keep the delay for now
+
+    # Cleanup old entries and close DB connection at the end
+    zb.cleanup_db(days_to_keep=7) # Keep records for 7 days (configurable)
+    zb.close_db()

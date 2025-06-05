@@ -25,15 +25,15 @@ class zaobao:
             # Provide a default UA or handle the error appropriately
             self.header = {'User-Agent': 'Mozilla/5.0'}
         try:
-            with open('send.txt', 'r') as f:
+            with open('send.json', 'r') as f:
                 self.sended_list = json.load(f)
                 if not isinstance(self.sended_list, list): # Ensure it's a list
                     logging.warning("send.txt does not contain a valid list. Initializing as empty list.")
                     self.sended_list = []
         except (FileNotFoundError, json.JSONDecodeError):
-            logging.warning("send.txt not found or invalid JSON. Initializing as empty list.")
+            logging.warning("send.json not found or invalid JSON. Initializing as empty list.")
             self.sended_list = [] # Initialize as empty list if file not found or invalid
-
+ 
     # 获取新闻列表
     def getNewsList(self):
         r = requests.get(self.url + '/realtime', headers=self.header)
@@ -98,13 +98,13 @@ class zaobao:
     # 更新新闻列表
     def updateList(self):
         try:
-            with open('send.txt', 'w') as f:
+            with open('send.json', 'w') as f:
                 # Keep only the last 320 entries (consider making this configurable)
                 send_to_write = self.sended_list[-320:]
                 json.dump(send_to_write, f)
             logging.info('列表已更新')
         except IOError as e:
-            logging.error(f"Error writing to send.txt: {e}")
+            logging.error(f"Error writing to send.json: {e}")
 
 if __name__ == '__main__':
     # 配置日志记录

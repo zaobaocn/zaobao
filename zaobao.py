@@ -2,6 +2,7 @@
 import os
 import re
 import time
+import json
 import hashlib
 import requests
 import logging
@@ -14,12 +15,24 @@ class zaobao:
         self.chat_id = chat_id
         self.news_list = []
         self.url = 'https://www.zaobao.com.sg'
-        with open('ua.json', 'r') as f:
-            ua_list = eval(f.read())
-            ua = ua_list[randrange(0,len(ua_list))]
-            self.header = {'User-Agent': ua}
-        with open('send.txt', 'r') as f:
-            self.sended_list = eval(f.read())
+        try:
+            with open('ua.json', 'r') as f:
+                ua_list = json.load(f)
+                ua = ua_list[randrange(0,len(ua_list))]
+                self.header = {'User-Agent': ua}
+        except (FileNotFoundError, json.JSONDecodeError, IndexError) as e:
+            logging.error(f"Error loading ua.json: {e}")
+            # Provide a default UA or handle the error appropriately
+            self.header = {'User-Agent': 'Mozilla/5.0'}
+        try:
+            with open('send.txt', 'r') as f:
+                self.sended_list = json.load(f)
+                if not isinstance(self.sended_list, list): # Ensure it's a list
+                    logging.warning("send.txt does not contain a valid list. Initializing as empty list.")
+                    self.sended_list = []
+        except (FileNotFoundError, json.JSONDecodeError):
+            logging.warning("send.txt not found or invalid JSON. Initializing as empty list.")
+            self.sended_list = [] # Initialize as empty list if file not found or invalid
 
     # 获取新闻列表
     def getNewsList(self):
@@ -84,11 +97,14 @@ class zaobao:
     
     # 更新新闻列表
     def updateList(self):
-        with open('send.txt', 'w') as f:
-            send = self.sended_list
-            send = send[-320:len(send)]
-            f.write(str(send))
-        logging.info('列表已更新')
+        try:
+            with open('send.txt', 'w') as f:
+                # Keep only the last 320 entries (consider making this configurable)
+                send_to_write = self.sended_list[-320:]
+                json.dump(send_to_write, f)
+            logging.info('列表已更新')
+        except IOError as e:
+            logging.error(f"Error writing to send.txt: {e}")
 
 if __name__ == '__main__':
     # 配置日志记录

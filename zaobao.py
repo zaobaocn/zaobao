@@ -4,6 +4,7 @@ import re
 import time
 import hashlib
 import requests
+import logging
 from random import randrange
 from bs4 import BeautifulSoup
 
@@ -28,7 +29,7 @@ class zaobao:
         cat = soup.find('div', {'id': 'realtime-articles-by-web-category'})
         china_list = cat.div.contents[1].div.ul.contents
         world_list = cat.div.contents[2].div.ul.contents
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), f'共发现新闻{len(china_list + world_list)}篇')
+        logging.info(f'共发现新闻{len(china_list + world_list)}篇')
         for i in (china_list + world_list):
             # 列表标题和新闻详情页标题有可能不一致
             # 使用链接判重也会出现重复发送现象（暂未找出原因）
@@ -40,8 +41,8 @@ class zaobao:
             title_md5 = hashlib.md5(title.encode('utf-8')).hexdigest()
             if url_md5 not in self.sended_list and title_md5 not in self.sended_list:
                 self.news_list.append(url)
-                print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '待获取')
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), f'待获取新闻共{len(self.news_list)}篇')
+                logging.info(f'{title} {url} 待获取')
+        logging.info(f'待获取新闻共{len(self.news_list)}篇')
 
     # 获取新闻全文
     def getArticle(self, url):
@@ -67,7 +68,7 @@ class zaobao:
             for i in kw_list:
                 kw += f'#{i.text.strip()} '
         msg = article_title + article + '\n\n' + kw
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已获取')
+        logging.info(f'{title} {url} 已获取')
         return title,msg,img,kw
     
     # 推送新闻至TG
@@ -87,9 +88,14 @@ class zaobao:
             send = self.sended_list
             send = send[-320:len(send)]
             f.write(str(send))
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), '列表已更新')
+        logging.info('列表已更新')
 
 if __name__ == '__main__':
+    # 配置日志记录
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+
     bot_id = os.getenv('BOT_ID')
     chat_id = os.getenv('CHAT_ID')
     zb = zaobao(bot_id, chat_id)
@@ -103,7 +109,7 @@ if __name__ == '__main__':
         if r.status_code != 200:
             msg = f"<a href='{zb.url + url}'>{title}</a> " + kw
             r = zb.sendMessage(msg, False)
-        print(time.strftime('%Y-%m-%d %H:%M:%S'), title, url, '已发送', r.json())
+        logging.info(f'{title} {url} 已发送 {r.json()}')
         zb.sended_list.extend([hashlib.md5(url.encode('utf-8')).hexdigest(), hashlib.md5(title.encode('utf-8')).hexdigest()])
         time.sleep(5)
     zb.updateList()

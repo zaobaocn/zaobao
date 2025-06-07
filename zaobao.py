@@ -4,7 +4,6 @@ import re
 import time
 import json
 import sqlite3
-# import hashlib # Removed hashlib
 import requests
 import logging
 from random import randrange
@@ -68,14 +67,8 @@ class zaobao:
         world_list = cat.div.contents[2].div.ul.contents
         logging.info(f'共发现新闻{len(china_list + world_list)}篇')
         for i in (china_list + world_list):
-            # 列表标题和新闻详情页标题有可能不一致
-            # 使用链接判重也会出现重复发送现象（暂未找出原因）
-            # 故使用链接和标题的md5值双重判重
-            # 使用zlib的crc32值会更快
             url = i.find('a')['href']
             title = i.find('h2').text.strip()
-            # url_md5 = hashlib.md5(url.encode('utf-8')).hexdigest() # Removed MD5
-            # title_md5 = hashlib.md5(title.encode('utf-8')).hexdigest() # Removed MD5
             # Check if the URL exists in the database
             self.cursor.execute("SELECT 1 FROM sent_items WHERE url = ?", (url,))
             if self.cursor.fetchone() is None:
@@ -167,13 +160,10 @@ if __name__ == '__main__':
         # Add sent item URL to DB after successful send or fallback send
         if r.status_code == 200:
             logging.info(f'{title} {url} 已发送')
-            # url_md5_sent = hashlib.md5(url.encode('utf-8')).hexdigest() # Removed MD5
-            # title_md5_sent = hashlib.md5(title.encode('utf-8')).hexdigest() # Removed MD5
             zb.add_sent_item(url) # Add the URL directly
-            # zb.add_sent_item(title_md5_sent) # No longer adding title md5
             zb.conn.commit() # Commit after each successful send
         else:
-             logging.error(f'Failed to send {title} {url}. Status: {r.status_code}, Response: {r.text}')
+             logging.error(f'Failed to send {title} {url}. Status: {r.status_code}, Response: {r.json()}')
 
         time.sleep(5) # Keep the delay for now
 

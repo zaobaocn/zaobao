@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # 专门针对 GitHub Actions 进行自动更新检查
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly" # 每周检查一次，你也可以改为 "daily" 或 "monthly"

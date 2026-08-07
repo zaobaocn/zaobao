@@ -85,7 +85,13 @@ class zaobao:
         title = soup.find('h1').text.strip()
         article_title = f"<a href='{self.url + url}'>" + '<b>' + title + '</b>' + '</a>'
         # 封面
-        img = re.search(r'"thumbnailUrl": "(.*?)"', r.text).groups()[0]
+        # 封面图：优先从 og:image meta 标签获取，其次尝试 JSON-LD 中的 image.url
+        og_img = soup.find('meta', property='og:image')
+        if og_img and og_img.get('content'):
+            img = og_img['content']
+        else:
+            match = re.search(r'"thumbnailUrl":\s*"(.*?)"', r.text) or re.search(r'"image":\s*\[\{.*?"url":\s*"(.*?)"', r.text)
+            img = match.group(1) if match else None
         # 内容
         article_content = soup.find('div', {'class': "articleBody"})
         ps = article_content.find_all('p')

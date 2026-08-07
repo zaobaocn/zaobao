@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import os
-import re
 import time
 import json
 import sqlite3
@@ -57,23 +56,48 @@ class zaobao:
             self.conn.close()
             logging.info("Database connection closed.")
 
+    # 目标分类的 URL 前缀
+    TARGET_CATEGORIES = ('/news/china', '/news/world')
+
     # 获取新闻列表
     def getNewsList(self):
         r = requests.get(self.url + '/realtime', headers=self.header)
         r.encoding = 'utf-8'
         soup = BeautifulSoup(r.text, 'html.parser')
         cat = soup.find('div', {'id': 'realtime-articles-by-web-category'})
-        china_list = cat.div.contents[1].div.ul.contents
-        world_list = cat.div.contents[2].div.ul.contents
-        logging.info(f'共发现新闻{len(china_list + world_list)}篇')
-        for i in (china_list + world_list):
-            url = i.find('a')['href']
-            title = i.find('h2').text.strip()
-            # Check if the URL exists in the database
+        if not cat:
+            logging.error('找不到新闻列表容器 #realtime-articles-by-web-category')
+            return
+
+        # 找到所有分类列，通过列标题 <h2> 内的链接 href 判断是否是目标分类
+        # 不依赖位置索引，新加或调换列不影响抓取
+        row = cat.find('div', class_='row')
+        cols = row.find_all('div', recursive=False) if row else []
+        story_links = []
+        for col in cols:
+            h2 = col.find('h2')
+            if not h2:
+                continue
+            category_link = h2.find('a', href=True)
+            if not category_link:
+                continue
+            # 只处理目标分类
+            if any(category_link['href'].startswith(prefix) for prefix in self.TARGET_CATEGORIES):
+                story_links += col.find_all('a', href=lambda h: h and '/story' in h)
+
+        logging.info(f'共发现新闻{len(story_links)}篇')
+        seen = set()
+        for a in story_links:
+            url = a['href']
+            if url in seen:
+                continue
+            seen.add(url)
+            title = a.find('h2') or a.find('p')  # 文章标题标签
+            title_text = title.text.strip() if title else url
             self.cursor.execute("SELECT 1 FROM sent_items WHERE url = ?", (url,))
             if self.cursor.fetchone() is None:
                 self.news_list.append(url)
-                logging.info(f'{title} {url} 待获取')
+                logging.info(f'{title_text} {url} 待获取')
         logging.info(f'待获取新闻共{len(self.news_list)}篇')
 
     # 获取新闻全文
@@ -82,27 +106,32 @@ class zaobao:
         r.encoding = 'utf-8'
         soup = BeautifulSoup(r.text, 'html.parser')
         # 标题
-        title = soup.find('h1').text.strip()
+        h1 = soup.find('h1')
+        if not h1:
+            logging.warning(f'无法找到标题 {url}，跳过')
+            return None, None, None, None
+        title = h1.text.strip()
         article_title = f"<a href='{self.url + url}'>" + '<b>' + title + '</b>' + '</a>'
         # 封面图：从 og:image meta 标签获取
         og_img = soup.find('meta', property='og:image')
         img = og_img['content'] if og_img and og_img.get('content') else None
         # 内容
         article_content = soup.find('div', {'class': "articleBody"})
+        if not article_content:
+            logging.warning(f'无法找到正文 {url}，跳过')
+            return None, None, None, None
         ps = article_content.find_all('p')
         article = ''
         for p in ps:
             article += '\n\n' + p.text
-        # 关键词
+        # 关键词：从 <meta name="keywords"> 获取，更稳定
         kw = ''
-        keywords = soup.find('div', {'class': 'max-h-max'})
-        if keywords:
-            kw_list = keywords.find_all('a')
-            for i in kw_list:
-                kw += f'#{i.text.strip()} '
+        meta_kw = soup.find('meta', attrs={'name': 'keywords'})
+        if meta_kw and meta_kw.get('content'):
+            kw = ' '.join(f'#{k.strip()}' for k in meta_kw['content'].split(',') if k.strip())
         msg = article_title + article + '\n\n' + kw
         logging.info(f'{title} {url} 已获取')
-        return title,msg,img,kw
+        return title, msg, img, kw
     
     # 推送新闻至TG
     def sendMessage(self, text, disable_preview=True):
@@ -149,7 +178,9 @@ if __name__ == '__main__':
     zb = zaobao(bot_id, chat_id)
     zb.getNewsList()
     for url in zb.news_list:
-        title,msg,img,kw = zb.getArticle(url)
+        title, msg, img, kw = zb.getArticle(url)
+        if title is None:  # 解析失败，跳过该篇
+            continue
         if img:
             r = zb.sendPhoto(img, msg)
         else:
